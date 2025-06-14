@@ -1,0 +1,38 @@
+# ========== Java build ==========
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven / Gradle
+target/
+build/
+out/
+
+# ========== IDE / Editor ==========
+# IntelliJ / IDEA / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VSCode
+.vscode/
+
+# ========== OS / Temp ==========
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+
+# ========== Database ==========
+*.db
+!tests/*.db      # 保留 tests 文件夹下的测试数据库
+
+# ========== Archives / Packages ==========
+*.zip
+*.tar.gz
+*.rar
+
+# ========== Custom ==========
+lib/              # 忽略大型依赖文件夹（如非源码）
