@@ -1,5 +1,7 @@
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,6 +20,13 @@ public class DatabaseExporter {
     // Main export logic: connect to SQLite DB, write schema and data to output files
     public static void exportDatabase(String dbName, String outputPrefix) {
         String url = "jdbc:sqlite:" + dbName;
+
+        try {
+            Files.createDirectories(Paths.get(outputPrefix).getParent());
+        } catch (IOException e) {
+            System.err.println(" Unable to create output directory: " + e.getMessage());
+            return;
+        }
 
         try (Connection conn = DriverManager.getConnection(url);
              FileWriter schemaWriter = new FileWriter(outputPrefix + "_schema.sql");
@@ -203,6 +212,15 @@ public class DatabaseExporter {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
             System.out.println(" Failed to load SQLite driver: " + e.getMessage());
+            return;
+        }
+
+        if (args.length > 0) {
+            for (String dbName : args) {
+                String filename = Paths.get(dbName).getFileName().toString();
+                String outputName = filename.replaceFirst("\\.[^.]*$", "");
+                exportDatabase(dbName, "output/" + outputName);
+            }
             return;
         }
 

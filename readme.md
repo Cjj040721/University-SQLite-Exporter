@@ -1,100 +1,127 @@
-# University LSH Index Exporter
+<div align="center">
 
-A Java-based tool to export **SQLite database schema and data** into separate `.sql` files, preserving table dependencies via **foreign key-aware topological sorting**. Designed for use with university schema and LSH-indexed databases.
+# University SQLite Exporter
 
----
+**Export SQLite schema and rows into separate SQL files with dependency-aware table ordering.**
 
-## 📁 Project Structure
+A small Java utility that writes `CREATE TABLE`, primary key, foreign key, index, and `INSERT` statements while using topological sorting to place referenced tables before dependent tables.
 
-```
+[![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-JDBC-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Maven](https://img.shields.io/badge/Maven-Build-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
+[![Verification](https://img.shields.io/badge/Real_Export-Verified-2AA887)](#verification)
 
-university-lsh-index/
-├── src/                 # Java source code (includes DatabaseExporter.java)
-├── lib/                 # External libraries (.jar files if any)
-├── data/                # Input SQLite databases
-├── tests/               # Sample .db files for testing
-├── scripts/             # Shell scripts to restore test DBs
-├── docs/                # Reports, schema diagrams, etc.
-├── .gitignore           # Git ignore rules
-└── README.md            # This file
+[Features](#features) · [Build and Run](#build-and-run) · [Output](#output) · [Verification](#verification) · [Limitations](#limitations)
 
-````
+</div>
 
 ---
 
-## 🚀 How to Use
+## 1. Features
 
-### 1. Compile the Project
+- Connects to SQLite through the Xerial JDBC driver.
+- Exports schema and data into separate files.
+- Orders tables using foreign-key dependencies and depth-first topological sorting.
+- Writes primary keys, foreign keys, and explicit indexes.
+- Escapes single quotes in text values and writes `NULL` correctly.
+- Accepts one or more database paths from the command line.
+- Creates the output directory automatically.
+- Preserves the original six-database default paths for compatibility.
+
+> The repository name reflects its original university and LSH datasets. The utility exports SQLite databases; it does not implement an LSH indexing algorithm.
+
+## 2. Build and Run
+
+### Requirements
+
+- JDK 17 or newer
+- Maven 3.9+
 
 ```bash
-mkdir out
-javac -d out -cp "lib/*" src/DatabaseExporter.java
-````
-
-> If using an IDE like IntelliJ or Eclipse, just open the project and build.
-
-### 2. Prepare Databases
-
-Ensure you have SQLite `.db` files placed in the `data/` folder:
-
-* `data/university.db`
-* `data/LSH.db`
-* `data/Chinook.db`
-* `data/Northwind.db`
-* `data/test1.db`
-* `data/test2.db`
-
-Or run:
-
-```bash
-./scripts/restore-university.sh
-./scripts/restore-lsh.sh
+git clone https://github.com/Cjj040721/University-SQLite-Exporter.git
+cd University-SQLite-Exporter
+mvn clean package
 ```
 
-### 3. Run the Exporter
+Export one database:
 
 ```bash
-java -cp "out:lib/*" DatabaseExporter
+mvn exec:java -Dexec.args="/absolute/path/to/university.db"
 ```
 
-This will generate the following output files in the `output/` folder:
+Export several databases in one run:
 
-* `output/university_schema.sql`
-* `output/university_data.sql`
-* (and so on for each database)
+```bash
+mvn exec:java -Dexec.args="/path/to/university.db /path/to/LSH.db"
+```
+
+If no arguments are supplied, the program looks for the original defaults:
+
+```text
+data/university.db
+data/LSH.db
+data/Chinook.db
+data/Northwind.db
+data/test1.db
+data/test2.db
+```
+
+<a id="output"></a>
+## 3. Output
+
+For `university.db`, the exporter creates:
+
+```text
+output/university_schema.sql
+output/university_data.sql
+```
+
+The schema file includes table definitions, primary and foreign keys, and indexes. The data file contains one `INSERT` statement per row. Table order follows dependencies where possible; if a dependency cycle is detected, the exporter warns and falls back to the database's original table order.
+
+## 4. Repository Structure
+
+```text
+University-SQLite-Exporter/
+├── src/DatabaseExporter.java  # JDBC metadata, topological sort, and SQL writers
+├── scripts/                  # Original database restoration scripts
+├── docs/                     # Original documentation
+├── pom.xml                   # Java 17, SQLite JDBC, and exec configuration
+└── README.md
+```
+
+<a id="verification"></a>
+## 5. Verification
+
+The current version was built and run against a real SQLite database containing `department` and `staff` tables with a foreign key, an explicit index, and the text `Ada O'Brien`.
+
+| Check | Result |
+|---|---|
+| `mvn clean package` | Passed |
+| JDBC connection and export | Passed |
+| Dependency order | `department` written before `staff` |
+| Primary and foreign keys | Present in the exported schema |
+| Explicit index | Present in the exported schema |
+| Text escaping | `Ada O''Brien` written correctly |
+| Output directory | Created automatically |
+
+No automated test suite is present; verification uses a clean Maven build and a real database export.
+
+<a id="limitations"></a>
+## 6. Limitations
+
+- The exporter focuses on tables, keys, indexes, and rows; it does not provide complete SQLite database fidelity for views, triggers, or every internal SQLite object.
+- Generated SQL disables foreign keys during schema import; restoration scripts should re-enable them where appropriate.
+- Cyclic foreign-key dependencies require manual review after the fallback warning.
+- This is an educational utility, not a replacement for SQLite's official backup and migration tools.
+
+## 7. Author and Use
+
+**Cao Junjia**, May 2025. Provided for educational use; do not redistribute without permission.
 
 ---
 
-## ✨ Features
+<div align="center">
 
-* ✅ Export `CREATE TABLE`, `PRIMARY KEY`, `FOREIGN KEY`, and `INDEX` statements
-* ✅ Export `INSERT` statements with proper escaping
-* ✅ Handles **foreign key dependencies** with **topological sorting**
-* ✅ Outputs schema and data separately
+**University SQLite Exporter — Schema first, dependencies in order, rows preserved.**
 
----
-
-## 🧪 Sample Databases
-
-| File Name            | Description                  |
-| -------------------- | ---------------------------- |
-| `test_university.db` | Example university schema    |
-| `test_LSH.db`        | LSH-indexed data (test only) |
-| `Northwind.db`       | Classic e-commerce dataset   |
-| `Chinook.db`         | Music store sample DB        |
-
----
-
-## 📄 License
-
-This project is provided for **educational purposes only**.
-Do not redistribute without permission.
-
----
-
-## 👤 Author
-
-**Cao Junjia**
-May 28, 2025
-
----
+</div>
